@@ -7,23 +7,28 @@ import uuid
 from Crypto.Cipher import AES
 from Crypto.Util.Padding import pad, unpad
 import rsa
+import shelve
 
 IP = "0.0.0.0"
 PORT = 12345
+RSA_KEYS_SOURCE_FILE = 'rsa_keys'
 
 # initialize & load DB
 db = Database()
 
 lock = threading.Lock()
 
+rsa_public_key = None
+rsa_private_key = None
+
 EMAIL_TITLE = "Verification Code"
 EMAIL_BODY = "Your verification code is: "
 
 
-def create_rsa_keys():
-    (pk, sk) = rsa.newkeys(1024)
-    return pk, sk
-
+def load_rsa_keys(source_file):
+    global rsa_public_key, rsa_private_key
+    with shelve.open(source_file) as keys:
+        rsa_public_key, rsa_private_key = keys['public'], keys['private']
 
 
 def create_encrypted_msg(key, msg):
@@ -195,7 +200,8 @@ def initialize_connection_security(client, rsa_public_key, rsa_private_key):
 
 def handle_client(client):
 
-    rsa_public_key, rsa_private_key = create_rsa_keys()
+    # rsa_public_key, rsa_private_key = create_rsa_keys()
+    global rsa_public_key, rsa_private_key
 
     # before key transfer
     key = initialize_connection_security(client, rsa_public_key, rsa_private_key)
@@ -214,6 +220,8 @@ def handle_client(client):
 
 
 def main():
+
+    load_rsa_keys(RSA_KEYS_SOURCE_FILE)
 
     server = socket.socket()
     server.bind((IP, PORT))

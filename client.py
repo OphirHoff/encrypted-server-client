@@ -245,7 +245,7 @@ class GUI:
                 if response == "RSAR":
                     send_with_size(self.sock, "GKEY".encode())
                     response = recv_by_size(self.sock, return_type=bytes)
-                    public_key = pickle.loads(response.split(b'~')[1])
+                    public_key = pickle.loads(response[5:])
                     to_send = rsa.encrypt(create_request("key").encode(), public_key)
                     send_with_size(self.sock, to_send)
                     response = get_srvr_response(self.sock)
